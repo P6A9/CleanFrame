@@ -165,6 +165,19 @@ test('unknown and invalid ports cannot be substituted and a newer request cancel
 });
 
 
+
+test('YouTube and Prime Video are recognised by installed app name on regional builds', () => {
+  const h = harness(); let apps;
+  h.device.apps((error, value) => { assert.equal(error, null); apps = value; });
+  h.requests[0].ok([
+    { id: 'Owner12345.Home', name: 'My Home', show: true },
+    { id: 'DifferentYt01.YouTube', name: 'YouTube', show: false },
+    { id: 'PrimeVideo01.Client', name: 'Amazon Prime Video', show: false }
+  ]);
+  assert.deepEqual(apps.map(x => x.brand), ['youtube', 'primevideo']);
+  assert.deepEqual(apps.map(x => x.appId), ['DifferentYt01.YouTube', 'PrimeVideo01.Client']);
+});
+
 test('USB discovery reports mounted external storage without inventing devices', () => {
   const h = harness(), results = [];
   h.device.usb((error, drives) => results.push({ error, drives }));
