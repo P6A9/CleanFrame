@@ -131,8 +131,11 @@
       fs.listStorages(function (storages) {
         var result = [];
         (storages || []).forEach(function (storage, index) {
-          if (!storage || storage.type !== 'EXTERNAL' || (storage.state && storage.state !== 'MOUNTED')) return;
-          result.push({ id: String(index), name: storage.label || ('External storage ' + (result.length + 1)), path: storage.mountPoint || '', state: storage.state || 'UNKNOWN' });
+          var label, name;
+          if (!storage || storage.type !== 'EXTERNAL' || storage.state !== 'MOUNTED') return;
+          label = String(storage.label || '');
+          name = /^removable2$/i.test(label) ? 'USB storage' : label ? 'External storage: ' + label : 'External storage ' + (result.length + 1);
+          result.push({ id: label || String(index), name: name, label: label, state: storage.state });
         });
         finish(null, result);
       }, function (err) { finish(failure(err)); });
