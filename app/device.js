@@ -117,6 +117,21 @@
   }
   function home(done) { launchApp('com.samsung.tv.csfs', done); }
   function settings(done) { launchApp('com.samsung.tv.coba.setting', done); }
+  function usb(done) {
+    var fs = window.tizen && window.tizen.filesystem;
+    if (!fs || typeof fs.listStorages !== 'function') { unavailable(done); return; }
+    var finish = bounded(done, 8000);
+    try {
+      fs.listStorages(function (storages) {
+        var result = [];
+        (storages || []).forEach(function (storage, index) {
+          if (!storage || storage.type !== 'EXTERNAL' || (storage.state && storage.state !== 'MOUNTED')) return;
+          result.push({ id: String(index), name: storage.label || ('External storage ' + (result.length + 1)), path: storage.mountPoint || '', state: storage.state || 'UNKNOWN' });
+        });
+        finish(null, result);
+      }, function (err) { finish(failure(err)); });
+    } catch (err) { finish(failure(err)); }
+  }
   function apps(done) {
     if (!api()) { unavailable(done); return; }
     // Large installed catalogues can take longer than a launch response.
@@ -139,5 +154,5 @@
       }, function (err) { finish(failure(err)); });
     } catch (err) { finish(failure(err)); }
   }
-  window.FrameDevice = { launch: launch, launchApp: launchApp, art: art, home: home, settings: settings, apps: apps, sources: sources, setSource: setSource, cancelSource: cancelSource };
+  window.FrameDevice = { launch: launch, launchApp: launchApp, art: art, home: home, settings: settings, usb: usb, apps: apps, sources: sources, setSource: setSource, cancelSource: cancelSource };
 }());
