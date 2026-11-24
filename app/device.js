@@ -22,7 +22,7 @@
     'ZODRT12q2l.WebAccountExtension', 'ByJlgt0XeD.CastSettingsApp', 'tv6pbVMQFF.PrivacyChoices'];
   var SELF = 'nClrkHome1.FrameHome';
   function primaryBrand(name) {
-    var value = String(name || '').replace(/\\s+/g, ' ').trim().toLowerCase();
+    var value = String(name || '').replace(/\s+/g, ' ').trim().toLowerCase();
     if (value === 'youtube') return 'youtube';
     if (value === 'prime video' || value === 'amazon prime video') return 'primevideo';
     return '';
