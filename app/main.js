@@ -364,7 +364,7 @@
     S.sel = S.c.lastApp; S.selIdx = S.c.home.indexOf(S.sel);
     if (saved && initial.mode === 'open') initial.wall = WALLS[(wallIndex(initial.wall) + 1) % WALLS.length].id;
     // Keep the old schema keys alongside the builder values for in-place updates.
-    if (!saved) initial.controls = 'icons';
+    if (!saved || !saved.controls) initial.controls = 'icons';
     try { localStorage.setItem(KEY, JSON.stringify(serialise(initial))); S.c = initial; storageOk = true; } catch (e) { storageOk = false; }
   }
   function clearSession() { S.undo = []; S.removedAt = {}; S.note = null; S.err = null; }
