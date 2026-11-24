@@ -9,12 +9,14 @@ function harness({ supported = true, throwSource = false } = {}) {
   let now = 0, next = 0;
   const timers = new Map(), requests = [], launches = [], sourceRequests = [], changes = [];
   let current = { type: 'HDMI', number: 2 };
+  const storageRequests = [];
   const application = {
     getCurrentApplication: () => ({ appInfo: { id: 'Owner12345.Home' } }),
     getAppsInfo: (ok, fail) => requests.push({ ok, fail }),
     launch: (id, ok, fail) => launches.push({ id, ok, fail })
   };
-  const window = { tizen: { application } };
+  const filesystem = { listStorages: (ok, fail) => storageRequests.push({ ok, fail }) };
+  const window = { tizen: { application, filesystem } };
   if (supported) {
     window.tizen.systeminfo = { getPropertyValue: (name, ok, fail) => { assert.equal(name, 'VIDEOSOURCE'); sourceRequests.push({ ok, fail }); } };
     window.tizen.tvwindow = { getSource: (...args) => { assert.equal(args.length, 0); return current; },
@@ -29,7 +31,7 @@ function harness({ supported = true, throwSource = false } = {}) {
     now += ms;
     for (const [id, timer] of timers) if (timer.at <= now) { timers.delete(id); timer.callback(); }
   }
-  return { device: window.FrameDevice, requests, launches, sourceRequests, changes, advance, setCurrent: value => { current = value; } };
+  return { device: window.FrameDevice, requests, launches, sourceRequests, storageRequests, changes, advance, setCurrent: value => { current = value; } };
 }
 
 test('a 500-app catalogue can arrive after the old eight-second deadline', () => {
@@ -160,4 +162,56 @@ test('unknown and invalid ports cannot be substituted and a newer request cancel
   assert.equal(results[0].cancelled, true);
   h.sourceRequests[0].ok(video); assert.equal(h.changes.length, 0);
   h.sourceRequests[1].ok(video); assert.equal(h.changes[0].source.number, 2);
+});
+
+
+
+test('YouTube and Prime Video are recognised by installed app name on regional builds', () => {
+  const h = harness(); let apps;
+  h.device.apps((error, value) => { assert.equal(error, null); apps = value; });
+  h.requests[0].ok([
+    { id: 'Owner12345.Home', name: 'My Home', show: true },
+    { id: 'DifferentYt01.YouTube', name: 'YouTube', show: false },
+    { id: 'PrimeVideo01.Client', name: 'Amazon Prime Video', show: false }
+  ]);
+  assert.deepEqual(apps.map(x => x.brand), ['youtube', 'primevideo']);
+  assert.deepEqual(apps.map(x => x.appId), ['DifferentYt01.YouTube', 'PrimeVideo01.Client']);
+});
+
+test('USB discovery reports mounted external storage without inventing devices', () => {
+  const h = harness(), results = [];
+  h.device.usb((error, drives) => results.push({ error, drives }));
+  assert.equal(h.storageRequests.length, 1);
+  h.storageRequests[0].ok([
+    { label: 'removable2', type: 'EXTERNAL', state: 'MOUNTED' },
+    { label: 'internal0', type: 'INTERNAL', state: 'MOUNTED' },
+    { label: 'removable1', type: 'EXTERNAL', state: 'REMOVED' }
+  ]);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].error, null);
+  assert.deepEqual(Array.from(results[0].drives, x => x.name), ['USB storage']);
+  assert.equal(results[0].drives[0].label, 'removable2');
+});
+
+test('USB discovery returns an empty list when no external storage is mounted', () => {
+  const h = harness(), results = [];
+  h.device.usb((error, drives) => results.push({ error, drives }));
+  h.storageRequests[0].ok([{ label: 'Internal', type: 'INTERNAL', state: 'MOUNTED' }]);
+  assert.equal(results.length, 1);
+  assert.equal(results[0].error, null);
+  assert.equal(results[0].drives.length, 0);
+});
+
+test('USB discovery reports errors and times out once', () => {
+  for (const mode of ['denied', 'timeout']) {
+    const h = harness(), results = [];
+    h.device.usb((error, drives) => results.push({ error, drives }));
+    if (mode === 'denied') h.storageRequests[0].fail({ name: 'SecurityError' });
+    else h.advance(8000);
+    assert.equal(results.length, 1);
+    assert.ok(results[0].error);
+    assert.equal(results[0].drives, undefined);
+    h.storageRequests[0].ok([]);
+    assert.equal(results.length, 1);
+  }
 });

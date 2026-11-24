@@ -52,6 +52,10 @@ package, or change Home/startup settings.
 
 See [working with an agent](docs/for-agents.md) for the TV setup prompt and the distinction between UI work, app installation and native Home changes. An agent needs local computer access for TV work; a hosted chat cannot reach your TV merely by reading this repo.
 
+## Samsung BU8000 fork
+
+This branch's initial customisation and device-verification boundaries are documented in [the BU8000 customisation notes](docs/bu8000-customisation.md). It is a browser-first adaptation and is not yet verified on the UA43BU8000KLXL.
+
 ## Put it on a TV
 
 Use the staged [Samsung The Frame setup guide](docs/agent-tv-setup-guide.md) to understand the process used on my TV and adapt it to yours. It covers the remote's Developer Mode sequence, official Samsung tools, your own certificates and app identity, installation, visible checks and recovery.

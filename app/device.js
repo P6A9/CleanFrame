@@ -21,6 +21,12 @@
     'd0m1lV1nt2.emanual', '2022ePop01.SmartTV',
     'ZODRT12q2l.WebAccountExtension', 'ByJlgt0XeD.CastSettingsApp', 'tv6pbVMQFF.PrivacyChoices'];
   var SELF = 'nClrkHome1.FrameHome';
+  function primaryBrand(name) {
+    var value = String(name || '').replace(/\s+/g, ' ').trim().toLowerCase();
+    if (value === 'youtube') return 'youtube';
+    if (value === 'prime video' || value === 'amazon prime video') return 'primevideo';
+    return '';
+  }
   function api() { return window.tizen && window.tizen.application; }
   function selfId() {
     try { return api().getCurrentApplication().appInfo.id || SELF; }
@@ -117,6 +123,24 @@
   }
   function home(done) { launchApp('com.samsung.tv.csfs', done); }
   function settings(done) { launchApp('com.samsung.tv.coba.setting', done); }
+  function usb(done) {
+    var fs = window.tizen && window.tizen.filesystem;
+    if (!fs || typeof fs.listStorages !== 'function') { unavailable(done); return; }
+    var finish = bounded(done, 8000);
+    try {
+      fs.listStorages(function (storages) {
+        var result = [];
+        (storages || []).forEach(function (storage, index) {
+          var label, name;
+          if (!storage || storage.type !== 'EXTERNAL' || storage.state !== 'MOUNTED') return;
+          label = String(storage.label || '');
+          name = /^removable2$/i.test(label) ? 'USB storage' : label ? 'External storage: ' + label : 'External storage ' + (result.length + 1);
+          result.push({ id: label || String(index), name: name, label: label, state: storage.state });
+        });
+        finish(null, result);
+      }, function (err) { finish(failure(err)); });
+    } catch (err) { finish(failure(err)); }
+  }
   function apps(done) {
     if (!api()) { unavailable(done); return; }
     // Large installed catalogues can take longer than a launch response.
@@ -126,18 +150,18 @@
         var known = {}, seen = {}, result = [], self = selfId();
         Object.keys(IDS).forEach(function (brand) { known[IDS[brand]] = brand; });
         list.forEach(function (a) {
-          var primary = !!known[a.id], stream = STREAMING.indexOf(a.id) >= 0;
+          var brand = known[a.id] || primaryBrand(a.name), primary = !!brand, stream = STREAMING.indexOf(a.id) >= 0;
           var consumer = /^[A-Za-z0-9]{10}\.[A-Za-z0-9_-]+$/.test(a.id) || CONSUMER_SYSTEM.indexOf(a.id) >= 0;
           if (a.id === self || INTERNAL.indexOf(a.id) >= 0 || seen[a.id] || !a.name || (!primary && !stream && (!a.show || !consumer))) return;
           if (!primary && /(?:service|worker|preview|promotion|plugin|launcher|test|sdk|^ep[ -]|factory|daemon)/i.test(a.name + ' ' + a.id)) return;
           if (/-dummy$/.test(a.id) || a.id === 'com.samsung.tv.cobalt-yt') return;
           seen[a.id] = true;
-          result.push({ appId: a.id, name: a.name, brand: known[a.id] || EXTRA_BRANDS[a.id] || '', icon: a.iconPath || '', rank: primary ? Object.keys(IDS).indexOf(known[a.id]) : (stream ? 20 : 30) });
+          result.push({ appId: a.id, name: a.name, brand: brand || EXTRA_BRANDS[a.id] || '', icon: a.iconPath || '', rank: primary ? (brand === 'youtube' ? 0 : brand === 'primevideo' ? 1 : Object.keys(IDS).indexOf(brand)) : (stream ? 20 : 30) });
         });
         result.sort(function (a, b) { return a.rank - b.rank || a.name.toLowerCase().localeCompare(b.name.toLowerCase()); });
         finish(null, result);
       }, function (err) { finish(failure(err)); });
     } catch (err) { finish(failure(err)); }
   }
-  window.FrameDevice = { launch: launch, launchApp: launchApp, art: art, home: home, settings: settings, apps: apps, sources: sources, setSource: setSource, cancelSource: cancelSource };
+  window.FrameDevice = { launch: launch, launchApp: launchApp, art: art, home: home, settings: settings, usb: usb, apps: apps, sources: sources, setSource: setSource, cancelSource: cancelSource };
 }());
