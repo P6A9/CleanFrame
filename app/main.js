@@ -887,7 +887,7 @@
     ] }];
   }
   function detailRows(t) {
-    var rows = [[{ action: 'settings.back', label: t.group === 'rotation' ? 'Background' : t.group === 'inputs' ? 'Samsung' : 'Settings' }]];
+    var rows = [[{ action: 'settings.back', label: t.group === 'rotation' ? 'Background' : t.group === 'inputs' || t.group === 'usb' ? 'Samsung' : 'Settings' }]];
     detailSections(t).forEach(function (section) {
       var enabled = section.items.filter(function (item) { return !item.disabled; });
       if (section.horizontal && enabled.length) rows.push(enabled);
@@ -958,7 +958,6 @@
     else if (item.action === 'inputs.retry') loadInputs(t);
     else if (item.action === 'usb.retry') loadUsb(t);
     else if (item.action === 'usb.open') perform('Samsung Home', FrameDevice.home);
-    else if (item.action.indexOf('usb.') === 0) perform(item.label, function (done) { FrameDevice.openUsb(item.id, done); });
     else if (item.action.indexOf('input.') === 0) perform(item.label, function (done) {
       FrameDevice.setSource(Number(item.action.slice(6)), function (err) {
         t.refreshInputs = true;
