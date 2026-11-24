@@ -364,6 +364,7 @@
     S.sel = S.c.lastApp; S.selIdx = S.c.home.indexOf(S.sel);
     if (saved && initial.mode === 'open') initial.wall = WALLS[(wallIndex(initial.wall) + 1) % WALLS.length].id;
     // Keep the old schema keys alongside the builder values for in-place updates.
+    if (!saved) initial.controls = 'icons';
     try { localStorage.setItem(KEY, JSON.stringify(serialise(initial))); S.c = initial; storageOk = true; } catch (e) { storageOk = false; }
   }
   function clearSession() { S.undo = []; S.removedAt = {}; S.note = null; S.err = null; }
@@ -496,10 +497,10 @@
   }
   function utilAction(u) {
     if (u === 'inputs') openInputs();
-    else if (u === 'airplay') perform('AirPlay settings', function (done) { FrameDevice.settings(done, 'airplay'); });
-    else if (u === 'bluetooth') perform('Bluetooth audio settings', function (done) { FrameDevice.settings(done, 'bluetooth'); });
-    else if (u === 'picture') perform('Picture settings', function (done) { FrameDevice.settings(done, 'picture'); });
-    else if (u === 'usb') perform('USB media', function (done) { FrameDevice.usb(done); });
+    else if (u === 'airplay') perform('Samsung TV settings', FrameDevice.settings);
+    else if (u === 'bluetooth') perform('Samsung TV settings', FrameDevice.settings);
+    else if (u === 'picture') perform('Samsung TV settings', FrameDevice.settings);
+    else if (u === 'usb') openUsb();
     else openSettings();
   }
   function addAppsRoute() { openEditor('home'); }
@@ -854,9 +855,9 @@
     }) : [{ action: 'inputs.retry', label: t.loading ? 'Loading inputs…' : 'Try again', disabled: t.loading }],
       reason: t.inputError || (!t.loading && !t.inputs.length ? 'No HDMI inputs were reported by this TV.' : '') }];
     if (t.group === 'usb') return [{ id: 'usb', title: '', items: t.usb.length ? t.usb.map(function (drive) {
-      return { action: 'usb.' + drive.id, label: drive.name, description: drive.path || 'Connected USB storage' };
+      return { action: 'usb.open', label: drive.name, description: 'Open Samsung Home to browse this external drive' };
     }) : [{ action: 'usb.retry', label: t.loading ? 'Checking USB devices…' : 'Try again', disabled: t.loading }],
-      reason: t.usbError || (!t.loading && !t.usb.length ? 'No supported USB storage was reported by this TV.' : '') }];
+      reason: t.usbError || (!t.loading && !t.usb.length ? 'No mounted external storage was reported by this TV.' : '') }];
     if (t.group === 'background') return [
       { id: 'bg', title: 'Background type', items: options('bg', ['photo', 'light', 'dark']) },
       { id: 'wall', title: 'Wallpaper', items: [{ action: 'background.wallpaper', label: wall(S.c.wall).name, thumbnail: true, disabled: flat }] },
@@ -879,10 +880,10 @@
       { action: 'samsung.home', label: 'Samsung Home', description: 'Open Samsung’s Home screen' },
       { action: 'samsung.settings', label: 'TV settings', description: 'Picture, sound and network settings' },
       { action: 'samsung.inputs', label: 'Inputs', description: 'Choose an HDMI input' },
-      { action: 'samsung.airplay', label: 'AirPlay settings', description: 'Open the native AirPlay settings' },
-      { action: 'samsung.bluetooth', label: 'Bluetooth audio', description: 'Open native sound output settings' },
-      { action: 'samsung.picture', label: 'Picture mode', description: 'Open native picture settings' },
-      { action: 'samsung.usb', label: 'USB media', description: 'Browse supported USB storage' }
+      { action: 'samsung.airplay', label: 'AirPlay settings', description: 'Open TV Settings; choose Apple AirPlay Settings' },
+      { action: 'samsung.bluetooth', label: 'Bluetooth audio', description: 'Open TV Settings; choose Sound Output and your speaker' },
+      { action: 'samsung.picture', label: 'Picture mode', description: 'Open TV Settings; choose Picture and Picture Mode' },
+      { action: 'samsung.usb', label: 'USB media', description: 'Detect external storage and open Samsung media browsing' }
     ] }];
   }
   function detailRows(t) {
@@ -950,12 +951,13 @@
     else if (item.action === 'samsung.home') perform('Samsung Home', FrameDevice.home);
     else if (item.action === 'samsung.settings') perform('TV settings', FrameDevice.settings);
     else if (item.action === 'samsung.inputs') openInputs();
-    else if (item.action === 'samsung.airplay') perform('AirPlay settings', function (done) { FrameDevice.settings(done, 'airplay'); });
-    else if (item.action === 'samsung.bluetooth') perform('Bluetooth audio settings', function (done) { FrameDevice.settings(done, 'bluetooth'); });
-    else if (item.action === 'samsung.picture') perform('Picture settings', function (done) { FrameDevice.settings(done, 'picture'); });
+    else if (item.action === 'samsung.airplay') perform('TV Settings', FrameDevice.settings);
+    else if (item.action === 'samsung.bluetooth') perform('TV Settings', FrameDevice.settings);
+    else if (item.action === 'samsung.picture') perform('TV Settings', FrameDevice.settings);
     else if (item.action === 'samsung.usb') openUsb();
     else if (item.action === 'inputs.retry') loadInputs(t);
     else if (item.action === 'usb.retry') loadUsb(t);
+    else if (item.action === 'usb.open') perform('Samsung Home', FrameDevice.home);
     else if (item.action.indexOf('usb.') === 0) perform(item.label, function (done) { FrameDevice.openUsb(item.id, done); });
     else if (item.action.indexOf('input.') === 0) perform(item.label, function (done) {
       FrameDevice.setSource(Number(item.action.slice(6)), function (err) {
