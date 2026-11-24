@@ -22,7 +22,7 @@ This branch adapts CleanFrame's browser-first home interface for a Samsung UA43B
 
 The AirPlay, Bluetooth and Picture shortcuts do **not** deep-link into individual settings pages. CleanFrame currently uses the known Samsung Settings application entry point; the final selection inside Settings is made with the TV remote. No undocumented settings URI or app-control payload is assumed.
 
-USB discovery is read-only. It filters for mounted `EXTERNAL` storage. It does not enumerate files, write to a drive, or implement a media player.
+USB discovery is read-only. It filters for mounted `EXTERNAL` storage. Samsung's Tizen API documents `removable2` as the USB-host label where supported, but storage labels can vary by platform, so other external volumes are named generically. It does not enumerate files, write to a drive, or implement a media player. See the [Samsung Filesystem API](https://developer.samsung.com/smarttv/develop/api-references/tizen-web-device-api-references/filesystem-api.html).
 
 ## Safe development boundary
 
