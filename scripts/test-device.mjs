@@ -183,14 +183,14 @@ test('USB discovery reports mounted external storage without inventing devices',
   h.device.usb((error, drives) => results.push({ error, drives }));
   assert.equal(h.storageRequests.length, 1);
   h.storageRequests[0].ok([
-    { label: 'USB Drive', type: 'EXTERNAL', state: 'MOUNTED', mountPoint: '/opt/usr/media/USBDrive' },
-    { label: 'Internal', type: 'INTERNAL', state: 'MOUNTED', mountPoint: '/opt/usr/home' },
-    { label: 'Ejected', type: 'EXTERNAL', state: 'UNMOUNTED', mountPoint: '/media/ejected' }
+    { label: 'removable2', type: 'EXTERNAL', state: 'MOUNTED' },
+    { label: 'internal0', type: 'INTERNAL', state: 'MOUNTED' },
+    { label: 'removable1', type: 'EXTERNAL', state: 'REMOVED' }
   ]);
   assert.equal(results.length, 1);
   assert.equal(results[0].error, null);
-  assert.deepEqual(Array.from(results[0].drives, x => x.name), ['USB Drive']);
-  assert.equal(results[0].drives[0].path, '/opt/usr/media/USBDrive');
+  assert.deepEqual(Array.from(results[0].drives, x => x.name), ['USB storage']);
+  assert.equal(results[0].drives[0].label, 'removable2');
 });
 
 test('USB discovery returns an empty list when no external storage is mounted', () => {
